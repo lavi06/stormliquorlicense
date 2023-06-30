@@ -33,81 +33,6 @@ headers = {
 }
 ###################################
 
-def test():
-
-    city  = "ABILENE"
-    month = 6
-    year  = 2023
-
-    num_days = calendar.monthrange(year, month)[1]
-
-    query = f'`taxpayer_state` = "TX" AND `location_city` = "{city}" AND ( '
-    for i in range(1,29):
-        if i == 1:
-            query += f'`obligation_end_date_yyyymmdd` = "{year}-{month}-{i}T00:00:00.000"'
-
-        else:
-            query += f' OR `obligation_end_date_yyyymmdd` = "{year}-{month}-{i}T00:00:00.000"'
-
-    query += " )"
-
-
-    params = {  
-
-            "$select": """
-                          `location_name`,
-                          `location_address`,
-                          `location_zip`,
-                          `tabc_permit_number`,
-                          `obligation_end_date_yyyymmdd`,
-                          `liquor_receipts`,
-                          `wine_receipts`,
-                          `beer_receipts`,
-                          `cover_charge_receipts`,
-                          `total_receipts`
-                        """,
-
-            "$limit": "10000000",
-            "$where": f'`taxpayer_state` = "TX" AND `location_city` = "{city}"'
-            # "$where": query
-            }
-
-    response = requests.get('https://data.texas.gov/resource/naix-2893.json',
-        params = params,
-        headers=headers
-    )
-
-    data = json.loads(response.content)
-
-    data = (response.json())
-
-    df = pd.json_normalize(data)
-    print(df)
-    df['obligation_end_date_yyyymmdd'] = pd.to_datetime(df['obligation_end_date_yyyymmdd'])
-
-    df["year"]  = df["obligation_end_date_yyyymmdd"].dt.year
-    df["month"] = df["obligation_end_date_yyyymmdd"].dt.month 
-
-    df = df[(df["year"] == year) & (df["month"] == month)]
-
-    df["total_receipts"] = pd.to_numeric(df["total_receipts"])
-
-
-    df = df.sort_values(by=['total_receipts'], ascending=False)
-    df = df.reset_index()
-    df = df.drop(columns = ["index","year","month","obligation_end_date_yyyymmdd"])
-
-    df.to_excel("Data.xlsx", index = False)
-
-    return df, month, year
-
-# start_time = time.time()
-# test()
-# print("--- %s seconds ---" % (time.time() - start_time))
-# input("--")
-# df = pd.read_excel("Data.xlsx")
-# df, month, year = test()
-
 
 # emojis: https://www.webfx.com/tools/emoji-cheat-sheet/
 st.set_page_config(page_title="Texas Beverage Reciepts", page_icon=":bar_chart:", layout="wide")
@@ -144,7 +69,6 @@ def fetch_cities():
 
 
 
-
 def fetch_df():
 
     city  = st.session_state.CityBox
@@ -156,7 +80,7 @@ def fetch_df():
 
 
     query = f'`taxpayer_state` = "TX" AND `location_city` = "{city}" AND ( '
-    for i in range(1,29):
+    for i in range(1,num_days+1):
         if i == 1:
             query += f'`obligation_end_date_yyyymmdd` = "{year}-{month}-{i}T00:00:00.000"'
 
@@ -216,12 +140,13 @@ def fetch_df():
     return df, month, year
 
 
-
 if "unique_cities" not in st.session_state:
     # unique_cities = fetch_cities()
     st.session_state["unique_cities"] = fetch_cities()
 
+
 # ---- SIDEBAR ----
+
 
 st.sidebar.header("Please Filter Here:")
 
@@ -270,13 +195,7 @@ def create_pdf(df):
 
 
 
-
-
-def fff():
-
-    # progress_text = "Operation in progress. Please wait."
-    # my_bar = st.progress(0, text=progress_text)
-
+def create_charts():
 
     #############################
     # TOP KPI's
@@ -313,25 +232,23 @@ def fff():
     if len(df.index) > 0:
         csv = create_pdf(df)
 
-        st.download_button("Export Data", csv, f"{city}-{year}-{month}.pdf", mime='application/octet-stream', key='download-csv', on_click = fff)
+        st.download_button("Export Data", csv, f"{city}-{year}-{month}.pdf", mime='application/octet-stream', key='download-csv', on_click = create_charts)
 
-    print(df)
-    total_chart = df[["location_name","total_receipts"]].head(25)
+    if len(df.index) > 0:
+        total_chart = df[["location_name","total_receipts"]].head(25)
 
-    st.write(alt.Chart(total_chart, title = "Top 25 Location by Revenue").mark_bar().encode(
-        x = alt.X('location_name' , sort=None, title = "Location Name"),
-        y = alt.Y('total_receipts', title = "Total Reciepts"),
-    ))
+        st.write(alt.Chart(total_chart, title = "Top 25 Location by Revenue").mark_bar().encode(
+            x = alt.X('location_name' , sort=None, title = "Location Name"),
+            y = alt.Y('total_receipts', title = "Total Reciepts"),
+        ))
 
 
-
-    # my_bar = st.progress(100, text=progress_text)
 
 if fetch:
 
     df, month, year = fetch_df()
 
-    fff()
+    create_charts()
 
 
 
