@@ -133,8 +133,13 @@ def fetch_df():
         df = df.reset_index()
         df = df.drop(columns = ["index","year","month","obligation_end_date_yyyymmdd"])
         df = df.reset_index()
+        df.index = np.arange(1, len(df) + 1)
+
     else:
-        df = pd.DataFrame([], columns = ["index","location_name","location_address","location_zip","tabc_permit_number","obligation_end_date_yyyymmdd","liquor_receipts","wine_receipts","beer_receipts","cover_charge_receipts","total_receipt"])
+        df = pd.DataFrame([], columns = ["index","location_name","location_address","location_zip","tabc_permit_number","liquor_receipts","wine_receipts","beer_receipts","cover_charge_receipts","total_receipt"])
+
+    cols = ["index", "Location Name", "Location Address", "Location Zip","TABC Permit Num", "Liquor Receipts", "Wine Reciepts","Beer Reciepts", "Cover Charge Reciepts", "Total Reciepts"]
+    df.columns = cols
 
 
     return df, month, year
@@ -147,12 +152,12 @@ if "unique_cities" not in st.session_state:
 
 # ---- SIDEBAR ----
 
-
 st.sidebar.header("Please Filter Here:")
 
 city  = st.sidebar.selectbox("Select the City:" , options = ['Select'] + st.session_state["unique_cities"], key="CityBox")
 
-year = st.sidebar.selectbox("Select the Year:"  , options = ['Select'] + list(range(2000,datetime.date.today().year+1)), key="YearBox")
+year = st.sidebar.selectbox("Select the Year:"  , options = ['Select'] + list(reversed(list(range(2000,datetime.date.today().year+1)))), key="YearBox")
+
 
 if year == datetime.date.today().year:
     monthoptions = list(range(1,datetime.date.today().month + 1))
@@ -205,7 +210,7 @@ def create_charts():
         total_records  = len(df.index)
         total_records  = '{:,}'.format(total_records)
 
-        total_sales    = pd.to_numeric(df["total_receipts"]).sum()
+        total_sales    = pd.to_numeric(df["Total Reciepts"]).sum()
         total_sales    = '{:,}'.format(total_sales)
     else:
         total_records = 0
@@ -235,11 +240,11 @@ def create_charts():
         st.download_button("Export Data", csv, f"{city}-{year}-{month}.pdf", mime='application/octet-stream', key='download-csv', on_click = create_charts)
 
     if len(df.index) > 0:
-        total_chart = df[["location_name","total_receipts"]].head(25)
+        total_chart = df[["Location Name","Total Reciepts"]].head(25)
 
         st.write(alt.Chart(total_chart, title = "Top 25 Location by Revenue").mark_bar().encode(
-            x = alt.X('location_name' , sort=None, title = "Location Name"),
-            y = alt.Y('total_receipts', title = "Total Reciepts"),
+            x = alt.X('Location Name' , sort=None, title = "Location Name"),
+            y = alt.Y('Total Reciepts', title = "Total Reciepts"),
         ))
 
 
@@ -281,6 +286,3 @@ hide_st_style = """
 
 
 st.markdown( hide_st_style , unsafe_allow_html=True)
-
-
-
