@@ -15,7 +15,7 @@ from pylab import title, figure, xlabel, ylabel, xticks, bar, legend, axis, save
 from fpdf import FPDF
 from pypdf import PdfMerger
 
-
+website = "http://www.stormliquorlicense.com/"
 try:
     url = "https://images.squarespace-cdn.com/content/v1/57dc3fe2d482e9d2d55e8b86/1602870131002-5G51HOU8C3ATLERKPZZC/StormLL_logo-stack_blk+copy.png?format=1500w"
     image = requests.get(url)
@@ -48,7 +48,7 @@ def pdf_first_page(city, month,year):
     pdf.set_font('arial', 'B', 12)
     pdf.set_margins(10,10,10)
 
-    pdf.image('logo.png', x = 105-25, y = 10, w = 50, h = 25, type = '', link = '')
+    pdf.image('logo.png', x = 105-25, y = 10, w = 50, h = 25, type = '', link = website)
 
     pdf.set_font('', '', 10)
 
@@ -94,7 +94,7 @@ def pdf_first_page(city, month,year):
     pdf.set_font('arial', 'B', 12)
     pdf.set_margins(10,10,10)
 
-    pdf.image('logo.png', x = 105-25, y = 10, w = 50, h = 25, type = '', link = '')
+    pdf.image('logo.png', x = 105-25, y = 10, w = 50, h = 25, type = '', link = website)
 
     pdf.set_font('', '', 10)
 
