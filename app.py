@@ -16,6 +16,18 @@ from fpdf import FPDF
 from pypdf import PdfMerger
 
 
+try:
+    url = "https://images.squarespace-cdn.com/content/v1/57dc3fe2d482e9d2d55e8b86/1602870131002-5G51HOU8C3ATLERKPZZC/StormLL_logo-stack_blk+copy.png?format=1500w"
+    image = requests.get(url)
+    with open("logo.png","wb") as f:
+        f.write(image.content)
+except:
+    url = "https://picsum.photos/200/300?grayscale"
+    image = requests.get(url)
+    with open("logo.png","wb") as f:
+        f.write(image.content)
+
+
 class FPDF(FPDF):
     def footer(self):
         # Go to 1.5 cm from bottom
@@ -78,6 +90,16 @@ def pdf_first_page(city, month,year):
 
     pdf.add_page()
 
+    pdf.set_xy(0, 0)
+    pdf.set_font('arial', 'B', 12)
+    pdf.set_margins(10,10,10)
+
+    pdf.image('logo.png', x = 105-25, y = 10, w = 50, h = 25, type = '', link = '')
+
+    pdf.set_font('', '', 10)
+
+    pdf.cell(10, 50, ln = 1, border = border)
+
     pdf.cell(10)
 
     h = 1078
@@ -85,8 +107,11 @@ def pdf_first_page(city, month,year):
     neww = 150
     newh = neww/w*h
 
+
     pdf.cell(0, 10,border = border, ln = 1)
 
+    pdf.set_font('', 'U', 10)
+    pdf.cell(10, 5,border = border)
     # pdf.cell(10, 5, border = border)
     pdf.cell(0 , 5, txt = 'Chart 2 : Top 25 Locations by Total Reciepts', border = border, ln = 1, align = 'L', fill = False, link = '')
 
@@ -111,16 +136,13 @@ def create_plots(df):
     CoverChargeReciepts = sum(pd.to_numeric(df["Cover Charge Reciepts"]))
     TotalReciepts = sum(pd.to_numeric(df["Total Reciepts"]))
 
-    print("LiquorReceipts:", LiquorReceipts)
-    print("WineReciepts:", WineReciepts)
-    print("BeerReciepts:", BeerReciepts)
-    print("CoverChargeReciepts:", CoverChargeReciepts)
-    print("TotalReciepts:", TotalReciepts)
-
 
     fig, ax = plt.subplots(figsize =(8, 8))
 
-    ax.bar(["Liquor Receipts","Wine Reciepts","Beer Reciepts","Cover Charge Reciepts","Total Reciepts"], [LiquorReceipts, WineReciepts, BeerReciepts, CoverChargeReciepts, TotalReciepts])
+    barlist = ax.bar(["Liquor Receipts","Wine Reciepts","Beer Reciepts","Cover Charge Reciepts","Total Reciepts"], [LiquorReceipts, WineReciepts, BeerReciepts, CoverChargeReciepts, TotalReciepts])
+    for each in barlist:
+        each.set_color('#2B3368') 
+
     ax.invert_xaxis()
 
     ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
@@ -129,11 +151,12 @@ def create_plots(df):
         # plt.text(i.get_x()+ 0.5, i.get_height() + 1000000, "$ {:,.2f}".format(i.get_height()), fontsize = 8, fontweight ='bold', color ='grey', rotation = 90)
         plt.text(i.get_x()+ 0.5, i.get_height(), "  $ {:,.2f}".format(i.get_height()), fontsize = 8, fontweight ='bold', color ='grey', rotation = 90)
 
-    ax.grid(b = True, color ='grey', linestyle ='-.', linewidth = 0.5, alpha = 0.2)
-
+    ax.grid(visible = True, color ='grey', linestyle ='-.', linewidth = 0.5, alpha = 0.2)
+    
     plt.yticks(fontsize = 10)
     plt.xticks(rotation = 90, fontsize = 8)
     plt.savefig("output1", facecolor='w', bbox_inches="tight", pad_inches=0.3, transparent=True) 
+
 
     ##########################################
     #######Top 25 Locations by Reciepts#######
@@ -144,11 +167,12 @@ def create_plots(df):
     fig, ax = plt.subplots(figsize =(8, 8))
     fig.set_size_inches(12, 8)
 
-    ax.bar(total_chart["Location Name"], total_chart["Total Reciepts"])
+    barlist = ax.bar(total_chart["Location Name"], total_chart["Total Reciepts"])
+    for each in barlist:
+        each.set_color('#2B3368') 
+
 
     for i in ax.patches:
-
-        # plt.text( i.get_x() + 0.2, i.get_height() + 10000, "$ {:,.2f}".format(i.get_height()), fontsize = 8, fontweight ='bold', color ='grey', rotation = 90)
         plt.text( i.get_x() + 0.2, i.get_height(), "  $ {:,.2f}".format(i.get_height()), fontsize = 8, fontweight ='bold', color ='grey', rotation = 90)
 
     ax.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
@@ -160,7 +184,6 @@ def create_plots(df):
     plt.yticks(fontsize = 10)
     plt.xticks(rotation = 90, fontsize = 8)
     plt.savefig("Top25", facecolor='w', bbox_inches="tight", pad_inches=0.3, transparent=True) 
-
 
 
 # def create_pdf(df, city, month,year):
@@ -199,10 +222,10 @@ def create_plots(df):
 #     merger.write("Final.pdf")
 #     merger.close()
 
-    # with open("foo.pdf", "rb") as pdf_file:
-    #     encoded_string = pdf_file.read()
+#     # with open("foo.pdf", "rb") as pdf_file:
+#     #     encoded_string = pdf_file.read()
     
-    # return encoded_string
+#     # return encoded_string
 
 
 # df = pd.read_excel("Excel.xlsx")
@@ -372,9 +395,10 @@ else:
 
 
 # @st.cache
-def create_pdf(df, city, month,year):
+def create_pdf(df, city, month, year):
+
     ########## Create PDF
-    print("Running Create PDF")
+    print("Running Function Create PDF")
 
     create_plots(df)
     pdf_first_page(city, month,year)
@@ -400,7 +424,7 @@ def create_pdf(df, city, month,year):
         the_table.auto_set_column_width(col=list(range(len(df.columns))))
 
         pp.savefig(fig, bbox_inches='tight')
-
+    print("----------------")
     pp.close()
 
     merger = PdfMerger()
@@ -415,10 +439,6 @@ def create_pdf(df, city, month,year):
     
     return encoded_string
 
-
-# df = pd.read_excel("Excel.xlsx")
-# create_pdf(df)
-# input("----")
 
 
 def create_charts():
@@ -459,7 +479,7 @@ def create_charts():
 
         csv = create_pdf(df, city, month, year)
 
-        st.download_button("Export Data", csv, f"{city}-{year}-{month}.pdf", mime='application/octet-stream', key='download-csv')
+        st.download_button("Export Data", csv, f"{city}-{year}-{month}.pdf", mime='application/octet-stream', key='download-csv', on_click = create_charts)
 
 
     if len(df.index) > 0:
@@ -508,4 +528,4 @@ hide_st_style = """
             """
 
 
-st.markdown( hide_st_style , unsafe_allow_html=True)
+st.markdown(hide_st_style , unsafe_allow_html=True)
