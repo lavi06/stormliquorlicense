@@ -14,8 +14,6 @@ import matplotlib
 from pylab import title, figure, xlabel, ylabel, xticks, bar, legend, axis, savefig
 from fpdf import FPDF
 from pypdf import PdfMerger
-import cv2
-
 
 
 class FPDF(FPDF):
